@@ -2,10 +2,14 @@ import axios from "axios";
 import {
   type FailedLoginResponse,
   type LoginRequest,
-  type LoginResponse,
   type RefreshTokenResponse,
   type SuccessLoginResponse,
 } from "./type";
+import type {
+  IRegister,
+  IFailedRegisterResponse,
+  ISuccessRegisterResponse,
+} from "@/types/registerType";
 
 const BASE_URL = "http://localhost:5001/";
 
@@ -34,11 +38,14 @@ authApi.interceptors.response.use(
   },
   async (error) => {
     try {
-      if (error.response.status == 401) {
+      const originalRequest = error.config;
+      if (error.response.status === 401 && !originalRequest._retry) {
+        originalRequest._retry = true;
         const response = await refreshToken();
         await localStorage.setItem("access_token", response.data.access_token);
+        return authApi(originalRequest);
       }
-      return authApi(error.config);
+      return Promise.reject(error);
     } catch (error) {
       return Promise.reject(error);
     }
@@ -57,4 +64,11 @@ const loginApi = async (request: LoginRequest) => {
   return response;
 };
 
-export { loginApi, refreshToken, authApi };
+const registerApi = async (request: IRegister) => {
+  const response = await authApi.post<
+    ISuccessRegisterResponse | IFailedRegisterResponse
+  >("register", request);
+  return response;
+};
+
+export { loginApi, refreshToken, authApi, registerApi };

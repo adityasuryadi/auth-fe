@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import LoginPage from "../components/LoginPage.vue";
 import HomePage from "../components/HomePage.vue";
 import AboutPage from "../components/AboutPage.vue";
-
+import RegisterPage from "@/components/pages/RegisterPage.vue";
 const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -10,6 +10,14 @@ const router = createRouter({
       path: "/login",
       component: LoginPage,
       name: "Login",
+      meta: {
+        hideForAuth: true,
+      },
+    },
+    {
+      path: "/register",
+      component: RegisterPage,
+      name: "Register",
       meta: {
         hideForAuth: true,
       },
@@ -32,7 +40,7 @@ const router = createRouter({
   ],
 });
 router.beforeEach((to, form) => {
-  const publicPages: string[] = ["/login", "about"];
+  const publicPages: string[] = ["/login", "/about", "/register"];
   const authRequired: boolean = !publicPages.includes(to.path);
   const refreshToken: string | null = localStorage.getItem("refresh_token");
   if (to.matched.some((record) => record.meta.requiresAuth)) {
@@ -45,6 +53,10 @@ router.beforeEach((to, form) => {
 
   if (to.matched.some((record) => record.meta.hideForAuth)) {
     if (refreshToken != null && to.name == "Login") {
+      return { name: "Home" };
+    }
+
+    if (refreshToken != null && to.name == "Register") {
       return { name: "Home" };
     }
     return true;

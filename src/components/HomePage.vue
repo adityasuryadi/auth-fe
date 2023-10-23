@@ -7,7 +7,7 @@
 </template>
 <script setup lang="ts">
 import { onMounted } from "vue";
-import { authApi } from "../api/authApi";
+import { authApi } from "@/api/authApi";
 import { useAuthStore } from "@/stores/authStores";
 import { storeToRefs } from "pinia";
 import TheNavbar from "@/components/TheNavbar.vue";
