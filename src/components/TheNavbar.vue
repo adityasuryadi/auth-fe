@@ -11,7 +11,7 @@
         />
         <span
           class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white"
-          >Flowbite {{ isAuth }}
+          >Flowbite
         </span>
       </a>
       <button
@@ -71,13 +71,30 @@
             >
           </li>
           <li>
-            <a
-              href="#"
-              class="block py-2 pl-3 pr-4 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 dark:text-white md:dark:hover:text-blue-500 dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent"
-              >Pricing</a
+            Cart {{ totalCarts }}
+            <button
+              type="button"
+              class="flex mr-3 text-sm bg-gray-800 rounded-full md:mr-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
+              id="user-menu-button"
+              aria-expanded="false"
+              data-dropdown-toggle="dropdownNavbarCart"
+              data-dropdown-placement="bottom"
             >
+              <span class="sr-only">Cart</span>
+              <img
+                class="w-8 h-8 rounded-full"
+                src="/docs/images/people/profile-picture-3.jpg"
+                alt="Cart"
+              />
+            </button>
+            <div
+              id="dropdownNavbarCart"
+              class="z-10 hidden font-normal bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 dark:divide-gray-600"
+            >
+              <list-cart></list-cart>
+            </div>
           </li>
-          <li>
+          <li v-if="user != null">
             <button
               type="button"
               class="flex mr-3 text-sm bg-gray-800 rounded-full md:mr-0 focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
@@ -93,29 +110,6 @@
                 alt="user photo"
               />
             </button>
-            <!-- <button
-              id="dropdownNavbarLink"
-              data-dropdown-toggle="dropdownNavbar"
-              class="flex items-center justify-between w-full py-2 pl-3 pr-4 text-gray-900 rounded hover:bg-gray-100 md:hover:bg-transparent md:border-0 md:hover:text-blue-700 md:p-0 md:w-auto dark:text-white md:dark:hover:text-blue-500 dark:focus:text-white dark:border-gray-700 dark:hover:bg-gray-700 md:dark:hover:bg-transparent"
-            >
-              Dropdown
-              <svg
-                class="w-2.5 h-2.5 ml-2.5"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 10 6"
-              >
-                <path
-                  stroke="currentColor"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="m1 1 4 4 4-4"
-                />
-              </svg>
-            </button> -->
-            <!-- Dropdown menu -->
             <div
               id="dropdownNavbar"
               class="z-10 hidden font-normal bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 dark:divide-gray-600"
@@ -141,10 +135,11 @@
                   >
                 </li>
                 <li>
-                  <a
+                  <router-link
+                    to="carts"
                     href="#"
                     class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                    >Settings</a
+                    >Cart {{ totalCarts }}</router-link
                   >
                 </li>
                 <li>
@@ -174,21 +169,33 @@
 import router from "@/routes";
 import { authApi } from "@/api/authApi";
 import { useAuthStore } from "@/stores/authStores";
+import { useCartStore } from "@/stores/cartStores";
 import { computed, onMounted, reactive, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { initDropdowns, initFlowbite } from "flowbite";
+import ListCart from "./pages/carts/ListCart.vue";
 
 const authStore = useAuthStore();
+const cartStore = useCartStore();
 const { authUser } = storeToRefs(authStore);
+const { carts } = storeToRefs(cartStore);
 const isAuth = computed(() => (authUser.value != null ? true : false));
 const user = computed(() => {
   return authUser.value;
 });
+const listCart = computed(() => {
+  return cartStore.getCarts;
+});
+
+const totalCarts = computed(() => {
+  return cartStore.totalCarts;
+});
+
 const currentRouteName = computed(() => {
   return router.currentRoute.value.name;
 });
 async function logout(): Promise<void> {
-  let response = await authApi.post("logout");
+  let response = await authApi.post("/auth-service/logout");
   if (response.status == 200) {
     localStorage.clear();
     router.push("login");
@@ -197,8 +204,9 @@ async function logout(): Promise<void> {
 
 async function getUser(): Promise<void> {
   try {
-    const response = await authApi.post("user");
+    const response = await authApi.post("/auth-service/user");
     await authStore.setAuthUser(response.data.data);
+
     // Object.assign(user, response.data.data);
   } catch (error) {
     return Promise.reject(error);
@@ -209,6 +217,7 @@ onMounted(() => {
   initFlowbite();
   initDropdowns();
   getUser();
-  console.log("router", router.currentRoute.value.name);
+
+  // console.log("router", router.currentRoute.value.name);
 });
 </script>

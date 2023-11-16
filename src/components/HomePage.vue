@@ -20,6 +20,6 @@ onMounted(() => {
 });
 
 function test() {
-  authApi.post("user");
+  authApi.post("/auth-service/user");
 }
 </script>

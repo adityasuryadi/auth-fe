@@ -10,8 +10,9 @@ import type {
   IFailedRegisterResponse,
   ISuccessRegisterResponse,
 } from "@/types/registerType";
+import router from "@/routes";
 
-const BASE_URL = "http://localhost:5001/";
+const BASE_URL = "http://localhost:8000";
 
 const authApi = axios.create({
   baseURL: BASE_URL,
@@ -39,12 +40,27 @@ authApi.interceptors.response.use(
   async (error) => {
     try {
       const originalRequest = error.config;
-      if (error.response.status === 401 && !originalRequest._retry) {
+      if (
+        error.response.status === 401 &&
+        !originalRequest._retry &&
+        (localStorage.getItem("access_token") == null ||
+          localStorage.getItem("access_token") == undefined)
+      ) {
+        router.push("/login");
+      }
+
+      if (
+        error.response.status === 401 &&
+        !originalRequest._retry &&
+        (localStorage.getItem("access_token") != null ||
+          localStorage.getItem("access_token") != undefined)
+      ) {
         originalRequest._retry = true;
         const response = await refreshToken();
         await localStorage.setItem("access_token", response.data.access_token);
-        return authApi(originalRequest);
+        return await authApi(originalRequest);
       }
+
       return Promise.reject(error);
     } catch (error) {
       return Promise.reject(error);
@@ -53,21 +69,23 @@ authApi.interceptors.response.use(
 );
 
 const refreshToken = async () => {
-  const response = await authApi.get<RefreshTokenResponse>("token");
+  const response = await authApi.get<RefreshTokenResponse>(
+    "/auth-service/token"
+  );
   return response.data;
 };
 
 const loginApi = async (request: LoginRequest) => {
   const response = await authApi.post<
     SuccessLoginResponse | FailedLoginResponse
-  >("login", request);
+  >("/auth-service/login", request);
   return response;
 };
 
 const registerApi = async (request: IRegister) => {
   const response = await authApi.post<
     ISuccessRegisterResponse | IFailedRegisterResponse
-  >("register", request);
+  >("/auth-service/register", request);
   return response;
 };
 
